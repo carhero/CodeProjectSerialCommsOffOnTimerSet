@@ -42,6 +42,7 @@ namespace CodeProjectSerialComms
             TimerThreadInit();
             TestMode.Text = TestMode.Items[0].ToString();
             TestMode.SelectedValue = 0;
+            CreateTimerBtn.Enabled = false;
         }
 
         private void TimerThreadInit()
@@ -56,9 +57,7 @@ namespace CodeProjectSerialComms
 
         static bool bPowerFlag = false;
         void timer_Elapsed(object sender, ElapsedEventArgs e)
-        {
-            //var dataArray = new byte[] { 0x0D };
-                        
+        {                       
             if (bPowerFlag)
             {
                 bPowerFlag = false;                
@@ -72,16 +71,6 @@ namespace CodeProjectSerialComms
                 SetTimerInterval(PowerOn2Off.Text);
             }
             ComPort.Write("\r\n");
-#if false
-            // 웹페이지 html문을 다운로드
-            WebClient web = new WebClient();
-            string webpage = web.DownloadString("http://mssql.tools");
-
-            // 다운로드 내용을 파일에 저장
-            string time = DateTime.Now.ToString("yyyyMMdd_hhmmss");
-            string outputFile = string.Format("page_{0}.html", time);
-            File.WriteAllText(outputFile, webpage); 
-#endif
         }
 
 
@@ -314,12 +303,19 @@ namespace CodeProjectSerialComms
                 ComPort.Open();
 
                 rtbOutgoing.Enabled = true;
+                CreateTimerBtn.Enabled = true;
             }
             else if (btnPortState.Text == "Open")
             {
+                if (timer.Enabled)
+                {
+                    CreateTimerBtn.PerformClick();
+                }
+                CreateTimerBtn.Enabled = false;
+
                 btnPortState.Text = "Closed";
                 ComPort.Close();
-                rtbOutgoing.Enabled = false;
+                rtbOutgoing.Enabled = false;                
             }
         }
         private void rtbOutgoing_KeyPress(object sender, KeyPressEventArgs e)
@@ -373,13 +369,17 @@ namespace CodeProjectSerialComms
 
         private void CreateTimerBtn_Click(object sender, EventArgs e)
         {
-            //TimerThreadInit();
-            if (timer == null)
+            if (btnPortState.Text == "Closed")
             {
-                //rtbIncoming.AppendText("timer is null\n\r");
-                TimerThreadInit();
+                rtbIncoming.AppendText("Uart Port is closed. please Open port firstly\n\r");
+                return;
             }
 
+            if (timer == null)
+            {
+                TimerThreadInit();
+            }
+            
             if (timer.Enabled)
             {
                 CreateTimerBtn.Text = "Timer Stop";
@@ -389,6 +389,15 @@ namespace CodeProjectSerialComms
             {
                 CreateTimerBtn.Text = "Timer Start";
                 timer.Start();
+
+                if (bPowerFlag)
+                {
+                    SetTimerInterval(PowerOff2On.Text);
+                }
+                else
+                {                    
+                    SetTimerInterval(PowerOn2Off.Text);
+                }
             }
 
             /** Power On/Off Timer coefficient enable set */
